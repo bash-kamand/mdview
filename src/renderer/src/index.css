@@ -1,0 +1,64 @@
+@import 'highlight.js/styles/github.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.toolbar-drag {
+  -webkit-app-region: drag;
+}
+.toolbar-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Prose customisations */
+.prose pre {
+  margin: 0;
+}
+.prose pre > code {
+  all: unset;
+}
+.prose code:not(pre code) {
+  @apply bg-gray-100 dark:bg-gray-800 rounded px-1 py-0.5 text-sm font-mono;
+  font-weight: normal;
+}
+.prose code:not(pre code)::before,
+.prose code:not(pre code)::after {
+  content: none;
+}
+.prose input[type='checkbox'] {
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Search result highlight */
+mark {
+  @apply bg-yellow-200 dark:bg-yellow-800 text-inherit rounded px-0.5;
+}

@@ -1,0 +1,16 @@
+appId: com.kamand.claudeview
+productName: ClaudeView
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**/*
+  - package.json
+mac:
+  target:
+    - target: dmg
+      arch:
+        - universal
+  category: public.app-category.developer-tools
+dmg:
+  artifactName: 'ClaudeView-${version}.dmg'
