@@ -15,7 +15,7 @@ const features = [
   { icon: '⌘⊞', label: 'Split view', desc: '⌘+click a file to split' },
   { icon: '⌃C', label: 'Copy', desc: 'Copy file content to clipboard' },
   { icon: '~tk', label: 'Tokens', desc: 'Estimated token count in status bar' },
-  { icon: '☀🌙', label: 'Theme', desc: 'Toggle light / dark mode' },
+  { icon: '🌙', label: 'Theme', desc: 'Toggle light / dark mode' },
 ]
 
 export default function Onboarding({ onClose, onOpenDemo }: Props) {
@@ -30,7 +30,14 @@ export default function Onboarding({ onClose, onOpenDemo }: Props) {
             The missing UI for your Claude Code projects
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">
-            By <span className="font-medium text-gray-600 dark:text-gray-300">Bashir Bandi</span>
+            By{' '}
+          <a
+            href="https://www.linkedin.com/in/bashirbandi/"
+            onClick={(e) => { e.preventDefault(); window.api.openExternal('https://www.linkedin.com/in/bashirbandi/') }}
+            className="font-medium text-blue-500 hover:underline cursor-pointer"
+          >
+            Bashir Bandi
+          </a>
             {' · '}
             Pay what you can to support future updates
           </p>
