@@ -54,8 +54,15 @@ html, body, #root {
   content: none;
 }
 .prose input[type='checkbox'] {
-  cursor: default;
-  pointer-events: none;
+  cursor: pointer;
+}
+
+/* Print — clean PDF output */
+@media print {
+  .no-print { display: none !important; }
+  html, body, #root { height: auto !important; overflow: visible !important; }
+  .print-content { overflow: visible !important; height: auto !important; }
+  .prose { max-width: 100% !important; font-size: 13px !important; }
 }
 
 /* Search result highlight */

@@ -5,17 +5,19 @@ import SidebarDragHandle from './components/SidebarDragHandle'
 import QuickSwitcher from './components/QuickSwitcher'
 import SearchView from './components/SearchView'
 import TasksView from './components/TasksView'
+import Onboarding from './components/Onboarding'
 import githubDarkCss from 'highlight.js/styles/github-dark.css?raw'
 
-type ThemePreference = 'light' | 'dark' | 'system'
+// ── Theme (sun / moon only) ───────────────────────────────────────────────────
+
+type ThemePreference = 'light' | 'dark'
 
 function useTheme(): [ThemePreference, (t: ThemePreference) => void] {
-  const [preference, setPreference] = useState<ThemePreference>('system')
+  const [preference, setPreference] = useState<ThemePreference>('light')
 
   const applyTheme = useCallback((pref: ThemePreference) => {
-    const isDark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    const isDark = pref === 'dark'
     document.documentElement.classList.toggle('dark', isDark)
-
     const styleId = 'hljs-dark-override'
     let el = document.getElementById(styleId)
     if (isDark) {
@@ -33,20 +35,19 @@ function useTheme(): [ThemePreference, (t: ThemePreference) => void] {
   useLayoutEffect(() => {
     const init = async () => {
       const stored = await window.api.getSetting('themePreference')
-      const pref = (['light', 'dark', 'system'].includes(stored as string) ? stored as ThemePreference : 'system')
+      let pref: ThemePreference
+      if (stored === 'light' || stored === 'dark') {
+        pref = stored
+      } else {
+        // First launch — resolve from OS, persist it
+        pref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        window.api.setSetting('themePreference', pref)
+      }
       setPreference(pref)
       applyTheme(pref)
     }
     init()
   }, [applyTheme])
-
-  useEffect(() => {
-    if (preference !== 'system') return
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = () => applyTheme('system')
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [preference, applyTheme])
 
   const setTheme = useCallback((pref: ThemePreference) => {
     setPreference(pref)
@@ -57,15 +58,25 @@ function useTheme(): [ThemePreference, (t: ThemePreference) => void] {
   return [preference, setTheme]
 }
 
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
 function extractFrontmatterType(content: string): string | null {
   const m = content.match(/^---\s*\n([\s\S]*?)\n---/)
   if (!m) return null
-  const typeMatch = m[1].match(/^type:\s*(.+)$/m)
-  return typeMatch ? typeMatch[1].trim() : null
+  const t = m[1].match(/^type:\s*(.+)$/m)
+  return t ? t[1].trim() : null
 }
 
-const THEME_ICONS: Record<ThemePreference, string> = { system: '⊙', light: '☀', dark: '☾' }
-const THEME_CYCLE: ThemePreference[] = ['system', 'light', 'dark']
+function toggleNthCheckbox(content: string, targetIndex: number): string {
+  let count = -1
+  return content.replace(/^(\s*- \[)([ xX])(\])/gm, (match, before, state, after) => {
+    count++
+    if (count !== targetIndex) return match
+    return `${before}${state.trim() === '' ? 'x' : ' '}${after}`
+  })
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [themePreference, setThemePreference] = useTheme()
@@ -87,11 +98,11 @@ export default function App() {
   const [splitContent, setSplitContent] = useState('')
   const [fileStats, setFileStats] = useState<Record<string, FileStats>>({})
   const [memoryFrontmatter, setMemoryFrontmatter] = useState<Record<string, string>>({})
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const sidebarFilterRef = useRef<HTMLInputElement>(null)
 
-  // Close recent dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -121,8 +132,7 @@ export default function App() {
       ...files.memory.map(f => f.path),
       ...files.other.map(f => f.path)
     ].filter(Boolean) as string[]
-    const stats = await window.api.getFileStats(allPaths)
-    setFileStats(stats)
+    setFileStats(await window.api.getFileStats(allPaths))
   }, [])
 
   const openFolder = useCallback(async (folderPath: string) => {
@@ -137,37 +147,39 @@ export default function App() {
       window.api.watchFolder(folderPath),
       window.api.addRecentFolder(folderPath)
     ])
-
     setProjectFiles(files)
     setRecentFolders(await window.api.getRecentFolders())
     await refreshStats(files)
 
-    // Parse frontmatter for memory files
     if (files.memory.length > 0) {
       const contents = await window.api.readMultipleFiles(files.memory.map(f => f.path))
       const fm: Record<string, string> = {}
-      for (const [path, content] of Object.entries(contents)) {
-        const t = extractFrontmatterType(content)
-        if (t) fm[path] = t
+      for (const [p, c] of Object.entries(contents)) {
+        const t = extractFrontmatterType(c)
+        if (t) fm[p] = t
       }
       setMemoryFrontmatter(fm)
+    } else {
+      setMemoryFrontmatter({})
     }
 
     if (files.claudeMd) await loadFile(files.claudeMd)
   }, [loadFile, refreshStats])
 
-  // Init from last folder + load persisted settings
+  // Init
   useEffect(() => {
     const init = async () => {
-      const [lastFolder, recent, storedWidth, storedFontSize] = await Promise.all([
+      const [lastFolder, recent, storedWidth, storedFontSize, seenOnboarding] = await Promise.all([
         window.api.getLastFolder(),
         window.api.getRecentFolders(),
         window.api.getSetting('sidebarWidth'),
-        window.api.getSetting('fontSize')
+        window.api.getSetting('fontSize'),
+        window.api.getSetting('hasSeenOnboarding')
       ])
       setRecentFolders(recent)
       if (typeof storedWidth === 'number') setSidebarWidth(storedWidth)
       if (typeof storedFontSize === 'number') setFontSize(storedFontSize)
+      if (!seenOnboarding) setShowOnboarding(true)
       if (lastFolder) await openFolder(lastFolder)
     }
     init()
@@ -180,22 +192,19 @@ export default function App() {
       const files = await window.api.scanFolder(currentFolder)
       setProjectFiles(files)
       await refreshStats(files)
-
       if (selectedFile) {
         if (data.path === selectedFile.path && data.type === 'change') {
-          const content = await window.api.readFile(selectedFile.path)
-          setFileContent(content)
+          setFileContent(await window.api.readFile(selectedFile.path))
         }
         if (data.path === selectedFile.path && data.type === 'unlink') {
-          setSelectedFile(null)
-          setFileContent('')
+          setSelectedFile(null); setFileContent('')
         }
       }
     })
     return unlisten
   }, [currentFolder, selectedFile, refreshStats])
 
-  // Flat file list for keyboard nav
+  // Flat file list
   const flatFileList = useMemo<FileEntry[]>(() => {
     if (!projectFiles) return []
     return [
@@ -209,16 +218,9 @@ export default function App() {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
-        e.preventDefault()
-        setQuickSwitcherOpen(true)
-        return
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
-        e.preventDefault()
-        setShowSearch(true)
-        return
-      }
+      if (showOnboarding) { if (e.key === 'Escape') closeOnboarding(); return }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'p') { e.preventDefault(); setQuickSwitcherOpen(true); return }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') { e.preventDefault(); setShowSearch(true); return }
       if (e.key === 'Escape') {
         if (quickSwitcherOpen) { setQuickSwitcherOpen(false); return }
         if (showSearch) { setShowSearch(false); return }
@@ -232,9 +234,7 @@ export default function App() {
         if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return
         e.preventDefault()
         const idx = flatFileList.findIndex(f => f.path === selectedFile?.path)
-        const next = e.key === 'ArrowDown'
-          ? Math.min(idx + 1, flatFileList.length - 1)
-          : Math.max(idx - 1, 0)
+        const next = e.key === 'ArrowDown' ? Math.min(idx + 1, flatFileList.length - 1) : Math.max(idx - 1, 0)
         if (flatFileList[next]) loadFile(flatFileList[next])
         return
       }
@@ -245,7 +245,7 @@ export default function App() {
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [quickSwitcherOpen, showSearch, showTasks, showOutline, flatFileList, selectedFile, loadFile])
+  }, [showOnboarding, quickSwitcherOpen, showSearch, showTasks, showOutline, flatFileList, selectedFile, loadFile])
 
   const handleOpenFolder = useCallback(async () => {
     setShowRecent(false)
@@ -253,38 +253,37 @@ export default function App() {
     if (folderPath) await openFolder(folderPath)
   }, [openFolder])
 
-  const handleFontSizeChange = useCallback((size: number) => {
-    setFontSize(size)
-    window.api.setSetting('fontSize', size)
+  const handleCheckboxToggle = useCallback(async (index: number) => {
+    if (!selectedFile) return
+    const newContent = toggleNthCheckbox(fileContent, index)
+    setFileContent(newContent)
+    await window.api.writeFile(selectedFile.path, newContent)
+  }, [selectedFile, fileContent])
+
+  const closeOnboarding = useCallback(() => {
+    setShowOnboarding(false)
+    window.api.setSetting('hasSeenOnboarding', true)
   }, [])
 
-  const handleSidebarResize = useCallback((w: number) => {
-    setSidebarWidth(w)
-    window.api.setSetting('sidebarWidth', w)
-  }, [])
-
-  const cycleTheme = useCallback(() => {
-    const idx = THEME_CYCLE.indexOf(themePreference)
-    setThemePreference(THEME_CYCLE[(idx + 1) % THEME_CYCLE.length])
-  }, [themePreference, setThemePreference])
+  const handleOpenDemo = useCallback(async () => {
+    const demoPath = await window.api.getDemoPath()
+    closeOnboarding()
+    await openFolder(demoPath)
+  }, [openFolder, closeOnboarding])
 
   const truncatePath = (p: string) => p.length > 55 ? '…' + p.slice(-55) : p
 
-  const hasAnyFiles = !!(
-    projectFiles && (
-      projectFiles.claudeMd ||
-      projectFiles.commands.length > 0 ||
-      projectFiles.memory.length > 0 ||
-      projectFiles.other.length > 0
-    )
-  )
+  const hasAnyFiles = !!(projectFiles && (
+    projectFiles.claudeMd || projectFiles.commands.length > 0 ||
+    projectFiles.memory.length > 0 || projectFiles.other.length > 0
+  ))
 
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 select-none">
       {/* Toolbar */}
       <div
-        className="toolbar-drag flex items-center gap-3 px-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0"
-        style={{ minHeight: 44, paddingTop: 8, paddingBottom: 8, paddingLeft: 84 }}
+        className="toolbar-drag no-print flex items-center gap-3 px-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0"
+        style={{ minHeight: 44, paddingTop: 6, paddingBottom: 6, paddingLeft: 84 }}
       >
         <button
           onClick={handleOpenFolder}
@@ -324,43 +323,71 @@ export default function App() {
           )}
         </div>
 
-        {/* Right toolbar actions */}
+        {/* Right toolbar — grouped */}
         <div className="toolbar-no-drag flex items-center gap-1 flex-shrink-0">
-          <ToolbarButton onClick={() => setShowSearch(true)} title="Search files (⌘F)">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => setShowTasks(v => !v)}
-            title="Tasks view"
-            active={showTasks}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-          </ToolbarButton>
-          {selectedFile && (
-            <ToolbarButton
-              onClick={() => window.api.printToPDF(selectedFile.name)}
-              title="Export to PDF"
+          {/* Group 1: Views */}
+          <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-700/60 rounded-lg p-0.5">
+            <LabelledButton
+              onClick={() => setShowSearch(true)}
+              label="Search"
+              title="Search files (⌘F)"
+              active={showSearch}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
               </svg>
-            </ToolbarButton>
-          )}
-          <ToolbarButton onClick={cycleTheme} title={`Theme: ${themePreference}`}>
-            <span className="text-sm leading-none">{THEME_ICONS[themePreference]}</span>
-          </ToolbarButton>
+            </LabelledButton>
+            <LabelledButton
+              onClick={() => setShowTasks(v => !v)}
+              label="Tasks"
+              title="Tasks view"
+              active={showTasks}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </LabelledButton>
+          </div>
+
+          <div className="w-px h-5 bg-gray-200 dark:bg-gray-600 mx-0.5" />
+
+          {/* Group 2: PDF */}
+          <LabelledButton
+            onClick={() => selectedFile && window.api.printToPDF(selectedFile.name)}
+            label="PDF"
+            title="Export to PDF"
+            disabled={!selectedFile}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </LabelledButton>
+
+          <div className="w-px h-5 bg-gray-200 dark:bg-gray-600 mx-0.5" />
+
+          {/* Group 3: Theme */}
+          <button
+            onClick={() => setThemePreference(themePreference === 'dark' ? 'light' : 'dark')}
+            title={`Switch to ${themePreference === 'dark' ? 'light' : 'dark'} mode`}
+            className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-100 transition-colors"
+          >
+            {themePreference === 'dark' ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
 
       {/* Body */}
       <div className="flex flex-1 min-h-0">
-        {/* Sidebar */}
         <div
-          className="flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 overflow-y-auto"
+          className="no-print flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 overflow-y-auto"
           style={{ width: sidebarWidth }}
         >
           <Sidebar
@@ -375,11 +402,9 @@ export default function App() {
           />
         </div>
 
-        <SidebarDragHandle width={sidebarWidth} onResize={handleSidebarResize} />
+        <SidebarDragHandle width={sidebarWidth} onResize={(w) => { setSidebarWidth(w); window.api.setSetting('sidebarWidth', w) }} />
 
-        {/* Panel area */}
         <div className="flex flex-1 min-w-0">
-          {/* Primary panel */}
           <div className="flex flex-col flex-1 min-w-0">
             {showSearch ? (
               <SearchView
@@ -403,17 +428,17 @@ export default function App() {
                 onOpenFolder={handleOpenFolder}
                 onOpenExternal={(url) => window.api.openExternal(url)}
                 fontSize={fontSize}
-                onFontSizeChange={handleFontSizeChange}
+                onFontSizeChange={(s) => { setFontSize(s); window.api.setSetting('fontSize', s) }}
                 showOutline={showOutline}
                 onToggleOutline={() => setShowOutline(v => !v)}
                 fileStats={selectedFile ? (fileStats[selectedFile.path] ?? null) : null}
                 onCopyFile={() => window.api.writeToClipboard(fileContent)}
                 onPrintToPDF={() => selectedFile && window.api.printToPDF(selectedFile.name)}
+                onCheckboxToggle={handleCheckboxToggle}
               />
             )}
           </div>
 
-          {/* Split panel */}
           {splitFile && (
             <>
               <div className="w-px bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
@@ -426,7 +451,7 @@ export default function App() {
                   onOpenFolder={handleOpenFolder}
                   onOpenExternal={(url) => window.api.openExternal(url)}
                   fontSize={fontSize}
-                  onFontSizeChange={handleFontSizeChange}
+                  onFontSizeChange={(s) => { setFontSize(s); window.api.setSetting('fontSize', s) }}
                   showOutline={false}
                   onToggleOutline={() => {}}
                   fileStats={fileStats[splitFile.path] ?? null}
@@ -441,7 +466,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Modals */}
       {quickSwitcherOpen && (
         <QuickSwitcher
           files={flatFileList}
@@ -449,33 +473,42 @@ export default function App() {
           onClose={() => setQuickSwitcherOpen(false)}
         />
       )}
+
+      {showOnboarding && (
+        <Onboarding onClose={closeOnboarding} onOpenDemo={handleOpenDemo} />
+      )}
     </div>
   )
 }
 
-function ToolbarButton({
-  onClick,
-  title,
-  children,
-  active = false
+// ── Toolbar components ────────────────────────────────────────────────────────
+
+function LabelledButton({
+  onClick, label, title, children, active = false, disabled = false
 }: {
   onClick: () => void
+  label: string
   title: string
   children: React.ReactNode
   active?: boolean
+  disabled?: boolean
 }) {
   return (
     <button
       onClick={onClick}
       title={title}
+      disabled={disabled}
       className={[
-        'p-1.5 rounded-md transition-colors',
-        active
-          ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400'
-          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200'
+        'flex flex-col items-center gap-0.5 px-2 py-1 rounded-md transition-colors min-w-[40px]',
+        disabled
+          ? 'opacity-30 cursor-not-allowed'
+          : active
+            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400'
+            : 'text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-100'
       ].join(' ')}
     >
       {children}
+      <span className="text-[9px] font-medium leading-none opacity-70">{label}</span>
     </button>
   )
 }

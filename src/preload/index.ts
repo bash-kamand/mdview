@@ -43,6 +43,12 @@ const api = {
   setSetting: (key: string, value: unknown): Promise<void> =>
     ipcRenderer.invoke('store:setSetting', key, value),
 
+  writeFile: (filePath: string, content: string): Promise<void> =>
+    ipcRenderer.invoke('fs:writeFile', filePath, content),
+
+  getDemoPath: (): Promise<string> =>
+    ipcRenderer.invoke('app:getDemoPath'),
+
   openExternal: (url: string): Promise<void> =>
     ipcRenderer.invoke('shell:openExternal', url),
 

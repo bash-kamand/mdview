@@ -14,6 +14,7 @@ interface StoreData {
   sidebarWidth: number
   themePreference: 'light' | 'dark' | 'system'
   fontSize: number
+  hasSeenOnboarding: boolean
 }
 
 function storePath(): string {
@@ -35,7 +36,7 @@ function readStore(): StoreData {
   } catch {
     // ignore corrupt file
   }
-  return { recentFolders: [], lastFolder: null, sidebarWidth: 240, themePreference: 'system', fontSize: 14 }
+  return { recentFolders: [], lastFolder: null, sidebarWidth: 240, themePreference: 'system', fontSize: 14, hasSeenOnboarding: false }
 }
 
 function writeStore(data: StoreData): void {
@@ -289,6 +290,17 @@ ipcMain.handle('store:setSetting', (_event, key: string, value: unknown) => {
   const store = readStore() as Record<string, unknown>
   store[key] = value
   writeStore(store as unknown as StoreData)
+})
+
+ipcMain.handle('fs:writeFile', (_event, filePath: string, content: string) => {
+  writeFileSync(filePath, content, 'utf-8')
+})
+
+ipcMain.handle('app:getDemoPath', () => {
+  const base = app.isPackaged
+    ? process.resourcesPath
+    : join(app.getAppPath(), 'resources')
+  return join(base, 'demo')
 })
 
 ipcMain.handle('shell:openExternal', async (_event, url: string) => {

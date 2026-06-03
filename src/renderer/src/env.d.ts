@@ -48,6 +48,8 @@ interface Window {
     addRecentFolder: (folderPath: string) => Promise<void>
     getSetting: (key: string) => Promise<unknown>
     setSetting: (key: string, value: unknown) => Promise<void>
+    writeFile: (filePath: string, content: string) => Promise<void>
+    getDemoPath: () => Promise<string>
     openExternal: (url: string) => Promise<void>
     onFolderChange: (
       callback: (event: unknown, data: WatcherChange) => void

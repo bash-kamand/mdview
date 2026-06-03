@@ -6,6 +6,9 @@ directories:
 files:
   - out/**/*
   - package.json
+extraResources:
+  - from: resources/demo
+    to: demo
 mac:
   target:
     - target: dmg
