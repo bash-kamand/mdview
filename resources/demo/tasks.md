@@ -6,8 +6,8 @@ Click any checkbox to toggle it — ClaudeView saves the change directly to this
 
 - [x] Install ClaudeView
 - [x] Open the demo project
-- [ ] Open your real Claude Code project with **Open Folder**
-- [ ] Try the Tasks view (toolbar checklist button)
+- [x] Open your real Claude Code project with **Open Folder**
+- [x] Try the Tasks view (toolbar checklist button)
 - [ ] Press `⌘F` to search across all files
 - [ ] Press `⌘P` to switch files fast
 

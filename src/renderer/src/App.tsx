@@ -423,6 +423,9 @@ export default function App() {
               <TasksView
                 projectFiles={projectFiles}
                 onOpenFile={(file) => { loadFile(file); setShowTasks(false) }}
+                onFileUpdated={(file, newContent) => {
+                  if (selectedFile?.path === file.path) setFileContent(newContent)
+                }}
                 onClose={() => setShowTasks(false)}
               />
             ) : (

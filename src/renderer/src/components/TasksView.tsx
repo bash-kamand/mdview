@@ -25,11 +25,22 @@ function parseTasks(content: string): Task[] {
 interface Props {
   projectFiles: ProjectFiles | null
   onOpenFile: (file: FileEntry) => void
+  onFileUpdated?: (file: FileEntry, newContent: string) => void
   onClose: () => void
 }
 
-export default function TasksView({ projectFiles, onOpenFile, onClose }: Props) {
+function toggleNthCheckbox(content: string, targetIndex: number): string {
+  let count = -1
+  return content.replace(/^(\s*- \[)([ xX])(\])/gm, (match, before, state, after) => {
+    count++
+    if (count !== targetIndex) return match
+    return `${before}${state.trim() === '' ? 'x' : ' '}${after}`
+  })
+}
+
+export default function TasksView({ projectFiles, onOpenFile, onFileUpdated, onClose }: Props) {
   const [groups, setGroups] = useState<FileTaskGroup[]>([])
+  const [fileContents, setFileContents] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
 
@@ -51,9 +62,21 @@ export default function TasksView({ projectFiles, onOpenFile, onClose }: Props) 
         if (tasks.length > 0) result.push({ file, tasks })
       }
       setGroups(result)
+      setFileContents(contents)
       setLoading(false)
     })
   }, [projectFiles])
+
+  const handleToggleTask = async (file: FileEntry, taskIndex: number) => {
+    const current = fileContents[file.path] ?? ''
+    const updated = toggleNthCheckbox(current, taskIndex)
+    await window.api.writeFile(file.path, updated)
+    setFileContents(prev => ({ ...prev, [file.path]: updated }))
+    setGroups(prev => prev.map(g =>
+      g.file.path === file.path ? { ...g, tasks: parseTasks(updated) } : g
+    ))
+    onFileUpdated?.(file, updated)
+  }
 
   const totalTasks = groups.reduce((s, g) => s + g.tasks.length, 0)
   const doneTasks = groups.reduce((s, g) => s + g.tasks.filter(t => t.done).length, 0)
@@ -137,18 +160,22 @@ export default function TasksView({ projectFiles, onOpenFile, onClose }: Props) 
               {!isCollapsed && (
                 <div className="py-1">
                   {tasks.map((task, i) => (
-                    <div key={i} className="flex items-start gap-2.5 px-4 py-1.5">
-                      <div className="mt-0.5 flex-shrink-0">
+                    <div key={i} className="flex items-start gap-2.5 px-4 py-1.5 group">
+                      <button
+                        onClick={() => handleToggleTask(file, i)}
+                        className="mt-0.5 flex-shrink-0 hover:opacity-70 transition-opacity cursor-pointer"
+                        title={task.done ? 'Mark as pending' : 'Mark as done'}
+                      >
                         {task.done ? (
                           <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                           </svg>
                         ) : (
-                          <svg className="w-4 h-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-green-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="9" strokeWidth="2" />
                           </svg>
                         )}
-                      </div>
+                      </button>
                       <span className={`text-sm leading-relaxed ${task.done ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-800 dark:text-gray-200'}`}>
                         {task.text}
                       </span>
