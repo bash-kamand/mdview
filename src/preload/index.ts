@@ -57,6 +57,13 @@ const api = {
   ) => {
     ipcRenderer.on('watcher:change', callback)
     return () => ipcRenderer.removeListener('watcher:change', callback)
+  },
+
+  onUpdateAvailable: (
+    callback: (event: Electron.IpcRendererEvent, data: { version: string; url: string }) => void
+  ) => {
+    ipcRenderer.on('update:available', callback)
+    return () => ipcRenderer.removeListener('update:available', callback)
   }
 }
 

@@ -307,10 +307,39 @@ ipcMain.handle('shell:openExternal', async (_event, url: string) => {
   await shell.openExternal(url)
 })
 
+// ── Update check ──────────────────────────────────────────────────────────────
+
+function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] ?? 0) > (pb[i] ?? 0)) return 1
+    if ((pa[i] ?? 0) < (pb[i] ?? 0)) return -1
+  }
+  return 0
+}
+
+async function checkForUpdates() {
+  try {
+    const res = await fetch('https://api.github.com/repos/bash-kamand/claudeview/releases/latest', {
+      headers: { 'User-Agent': 'ClaudeView' }
+    })
+    if (!res.ok) return
+    const data = await res.json() as { tag_name: string; html_url: string }
+    const latest = data.tag_name?.replace(/^v/, '')
+    const current = app.getVersion()
+    if (latest && compareVersions(latest, current) > 0 && mainWindow) {
+      mainWindow.webContents.send('update:available', { version: latest, url: data.html_url })
+    }
+  } catch { /* no network or API error — silently ignore */ }
+}
+
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {
   createWindow()
+  // Check for updates 5s after launch (non-blocking)
+  setTimeout(checkForUpdates, 5000)
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

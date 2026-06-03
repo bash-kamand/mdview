@@ -54,5 +54,8 @@ interface Window {
     onFolderChange: (
       callback: (event: unknown, data: WatcherChange) => void
     ) => () => void
+    onUpdateAvailable: (
+      callback: (event: unknown, data: { version: string; url: string }) => void
+    ) => () => void
   }
 }

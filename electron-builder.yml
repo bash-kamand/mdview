@@ -1,5 +1,6 @@
 appId: com.kamand.claudeview
 productName: ClaudeView
+copyright: Copyright © 2026 Bashir Bandi
 directories:
   buildResources: build
   output: dist
@@ -10,6 +11,7 @@ extraResources:
   - from: resources/demo
     to: demo
 mac:
+  icon: build/icon.icns
   target:
     - target: dmg
       arch:
@@ -17,3 +19,9 @@ mac:
   category: public.app-category.developer-tools
 dmg:
   artifactName: 'ClaudeView-${version}.dmg'
+  title: 'ClaudeView ${version}'
+publish:
+  provider: github
+  owner: bash-kamand
+  repo: claudeview
+  releaseType: release

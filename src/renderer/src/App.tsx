@@ -99,9 +99,15 @@ export default function App() {
   const [fileStats, setFileStats] = useState<Record<string, FileStats>>({})
   const [memoryFrontmatter, setMemoryFrontmatter] = useState<Record<string, string>>({})
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const sidebarFilterRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const unlisten = window.api.onUpdateAvailable((_event, data) => setUpdateInfo(data))
+    return unlisten
+  }, [])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -472,6 +478,19 @@ export default function App() {
           onSelect={(file) => { loadFile(file); setQuickSwitcherOpen(false) }}
           onClose={() => setQuickSwitcherOpen(false)}
         />
+      )}
+
+      {updateInfo && (
+        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3 bg-blue-600 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg">
+          <span>ClaudeView {updateInfo.version} is available</span>
+          <button
+            onClick={() => window.api.openExternal(updateInfo.url)}
+            className="font-semibold underline hover:no-underline"
+          >
+            Download
+          </button>
+          <button onClick={() => setUpdateInfo(null)} className="opacity-60 hover:opacity-100 ml-1">✕</button>
+        </div>
       )}
 
       {showOnboarding && (
