@@ -8,6 +8,7 @@ import TasksView from './components/TasksView'
 import Onboarding from './components/Onboarding'
 import Tour from './components/Tour'
 import FolderPrompt from './components/FolderPrompt'
+import SkillsPrompt from './components/SkillsPrompt'
 import githubDarkCss from 'highlight.js/styles/github-dark.css?raw'
 
 // ── Theme (sun / moon only) ───────────────────────────────────────────────────
@@ -102,6 +103,7 @@ export default function App() {
   const [memoryFrontmatter, setMemoryFrontmatter] = useState<Record<string, string>>({})
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [tourActive, setTourActive] = useState(false)
+  const [showSkillsPrompt, setShowSkillsPrompt] = useState(false)
   const [showFolderPrompt, setShowFolderPrompt] = useState(false)
   const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null)
 
@@ -514,7 +516,13 @@ export default function App() {
       {tourActive && (
         <Tour
           onClose={() => setTourActive(false)}
-          onFinish={() => { setTourActive(false); setShowFolderPrompt(true) }}
+          onFinish={() => { setTourActive(false); setShowSkillsPrompt(true) }}
+        />
+      )}
+
+      {showSkillsPrompt && (
+        <SkillsPrompt
+          onClose={() => { setShowSkillsPrompt(false); setShowFolderPrompt(true) }}
         />
       )}
 

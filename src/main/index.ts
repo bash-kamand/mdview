@@ -325,6 +325,37 @@ ipcMain.handle('app:getDemoPath', () => {
   return dest
 })
 
+// Resolve the bundled skills folder: packaged → Contents/Resources/skills
+// (via extraResources); dev → <repo>/resources/skills.
+function skillsSource(): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, 'skills')
+    : join(__dirname, '..', '..', 'resources', 'skills')
+}
+
+function skillsDest(): string {
+  return join(app.getPath('home'), '.claude', 'skills')
+}
+
+ipcMain.handle('app:installSkills', () => {
+  const source = skillsSource()
+  const dest = skillsDest()
+  try {
+    // recursive creates ~/.claude/skills/ (and parents); force overwrites stale copies
+    cpSync(source, dest, { recursive: true })
+    const skills = readdirSync(source, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => d.name)
+    return { ok: true, dest, skills }
+  } catch (e) {
+    return { ok: false, error: String(e) }
+  }
+})
+
+ipcMain.handle('app:skillsInstalled', () => {
+  return existsSync(join(skillsDest(), 'think-in-markdown'))
+})
+
 ipcMain.handle('shell:openExternal', async (_event, url: string) => {
   await shell.openExternal(url)
 })

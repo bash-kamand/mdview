@@ -10,6 +10,8 @@ files:
 extraResources:
   - from: resources/demo
     to: demo
+  - from: resources/skills
+    to: skills
 mac:
   icon: build/icon.icns
   target:

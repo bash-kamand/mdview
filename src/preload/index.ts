@@ -49,6 +49,12 @@ const api = {
   getDemoPath: (): Promise<string> =>
     ipcRenderer.invoke('app:getDemoPath'),
 
+  installSkills: (): Promise<{ ok: boolean; dest?: string; skills?: string[]; error?: string }> =>
+    ipcRenderer.invoke('app:installSkills'),
+
+  skillsInstalled: (): Promise<boolean> =>
+    ipcRenderer.invoke('app:skillsInstalled'),
+
   openExternal: (url: string): Promise<void> =>
     ipcRenderer.invoke('shell:openExternal', url),
 

@@ -50,6 +50,8 @@ interface Window {
     setSetting: (key: string, value: unknown) => Promise<void>
     writeFile: (filePath: string, content: string) => Promise<void>
     getDemoPath: () => Promise<string>
+    installSkills: () => Promise<{ ok: boolean; dest?: string; skills?: string[]; error?: string }>
+    skillsInstalled: () => Promise<boolean>
     openExternal: (url: string) => Promise<void>
     onFolderChange: (
       callback: (event: unknown, data: WatcherChange) => void
