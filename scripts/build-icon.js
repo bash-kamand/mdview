@@ -10,7 +10,7 @@ const ROOT = join(__dirname, '..')
 const ICONSET = join(ROOT, 'build', 'icon.iconset')
 const ICNS_OUT = join(ROOT, 'build', 'icon.icns')
 
-// Icon SVG — ClaudeView: dark rounded rect + document + blue eye dot
+// Icon SVG — MDView: dark rounded rect + document + blue eye dot
 const SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <!-- Background -->
   <rect width="1024" height="1024" rx="220" fill="#141518"/>

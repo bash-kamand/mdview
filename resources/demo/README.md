@@ -1,6 +1,6 @@
-# ClaudeView — Feature Showcase
+# MDView — Feature Showcase
 
-This file demonstrates every ClaudeView feature. Open the outline panel (≡ in the header) to navigate by heading.
+This file demonstrates every MDView feature. Open the outline panel (≡ in the header) to navigate by heading.
 
 ## Navigation
 
@@ -18,7 +18,7 @@ Try searching for: `token`, `memory`, or `checkbox`
 
 ## Tasks View
 
-Click the **Tasks** button in the toolbar. ClaudeView scans every file for `- [ ]` and `- [x]` patterns and shows them all in one place — grouped by file with a progress bar.
+Click the **Tasks** button in the toolbar. MDView shows the `- [ ]` and `- [x]` checkboxes from the file you're currently viewing, with a live progress bar. Click any task to toggle it — the change saves straight to disk.
 
 ## Outline Panel
 
@@ -81,4 +81,4 @@ Check the status bar at the bottom of this panel. It shows:
 - **size** — file size on disk
 - **modified** — how long ago the file was last changed
 
-For reference, GPT-4 and Claude have context windows of roughly 200,000 tokens. A 1KB markdown file is ~250 tokens.
+For reference, modern LLMs have context windows of roughly 200,000 tokens. A 1KB markdown file is ~250 tokens.

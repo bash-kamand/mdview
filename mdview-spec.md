@@ -1,4 +1,4 @@
-# ClaudeView — App Spec
+# MDView — App Spec
 
 ## Overview
 
@@ -159,7 +159,7 @@ project/
 ## Deliverable
 
 - Signed and notarized `.dmg` for macOS (Apple Silicon + Intel universal binary)
-- App name: **ClaudeView** (working title)
+- App name: **MDView**
 - No App Store in v1 — direct download
 
 ---

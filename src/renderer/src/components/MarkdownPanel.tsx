@@ -145,7 +145,7 @@ export default function MarkdownPanel({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
         </svg>
         <div>
-          <h2 className="text-lg font-medium text-gray-500 dark:text-gray-400 mb-1">Open a Claude Code project folder</h2>
+          <h2 className="text-lg font-medium text-gray-500 dark:text-gray-400 mb-1">Open a project folder</h2>
           <p className="text-sm text-gray-400 dark:text-gray-500">Browse CLAUDE.md, memory files, slash commands, and more.</p>
         </div>
         <button onClick={onOpenFolder} className="btn-glow px-5 py-2 text-sm">Open Folder</button>

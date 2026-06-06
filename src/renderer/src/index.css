@@ -89,23 +89,23 @@ mark {
   transform: translateY(0);
 }
 
-/* Hero pill (Open Folder, Get Started) */
+/* Hero buttons (Open Folder, Get Started) */
 .btn-glow {
   border: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: 9999px;
+  border-radius: 0.5rem;
   font-weight: 600;
   cursor: pointer;
-  background: #e6e6ea;
-  color: #52525b;
+  background: #e5e7eb;
+  color: #374151;
   transition: all 450ms ease-in-out;
 }
 .dark .btn-glow {
-  background: #1C1A1C;
-  color: #AAAAAA;
+  background: #374151;
+  color: #e5e7eb;
 }
 
 /* Compact toolbar buttons (Search, Tasks, PDF) — stacked icon + label */
@@ -117,18 +117,39 @@ mark {
   gap: 2px;
   min-width: 44px;
   padding: 5px 10px;
-  border-radius: 10px;
+  border-radius: 0.5rem;
   font-weight: 500;
   cursor: pointer;
-  background: #e6e6ea;
-  color: #52525b;
+  background: #e5e7eb;
+  color: #374151;
   transition: all 450ms ease-in-out;
 }
 .dark .btn-glow-tool {
-  background: #27272a;
-  color: #AAAAAA;
+  background: #374151;
+  color: #e5e7eb;
 }
 .btn-glow-tool:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+}
+
+/* Secondary buttons — same shape, outline style */
+.btn-secondary {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: #374151;
+  transition: all 200ms ease;
+}
+.btn-secondary:hover {
+  background: #f3f4f6;
+}
+.dark .btn-secondary {
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+.dark .btn-secondary:hover {
+  background: #1f2937;
 }

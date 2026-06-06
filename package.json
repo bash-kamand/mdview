@@ -1,16 +1,16 @@
 {
-  "name": "claudeview",
-  "productName": "ClaudeView",
+  "name": "mdview",
+  "productName": "MDView",
   "version": "2.0.0",
   "description": "The missing UI for your Claude Code projects",
   "author": {
     "name": "Bashir Bandi",
     "url": "https://www.linkedin.com/in/bashirbandi/"
   },
-  "homepage": "https://github.com/bash-kamand/claudeview",
+  "homepage": "https://github.com/bash-kamand/mdview",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bash-kamand/claudeview.git"
+    "url": "https://github.com/bash-kamand/mdview.git"
   },
   "main": "./out/main/index.js",
   "scripts": {

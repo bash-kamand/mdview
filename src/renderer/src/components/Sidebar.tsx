@@ -43,7 +43,7 @@ export default function Sidebar({
             d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
         </svg>
         <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
-          Open a Claude Code project folder to get started
+          Open a project folder to get started
         </p>
         <button
           onClick={onOpenFolder}

@@ -6,6 +6,8 @@ import QuickSwitcher from './components/QuickSwitcher'
 import SearchView from './components/SearchView'
 import TasksView from './components/TasksView'
 import Onboarding from './components/Onboarding'
+import Tour from './components/Tour'
+import FolderPrompt from './components/FolderPrompt'
 import githubDarkCss from 'highlight.js/styles/github-dark.css?raw'
 
 // ── Theme (sun / moon only) ───────────────────────────────────────────────────
@@ -39,8 +41,8 @@ function useTheme(): [ThemePreference, (t: ThemePreference) => void] {
       if (stored === 'light' || stored === 'dark') {
         pref = stored
       } else {
-        // First launch — resolve from OS, persist it
-        pref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        // First launch — default to light mode, persist it
+        pref = 'light'
         window.api.setSetting('themePreference', pref)
       }
       setPreference(pref)
@@ -99,6 +101,8 @@ export default function App() {
   const [fileStats, setFileStats] = useState<Record<string, FileStats>>({})
   const [memoryFrontmatter, setMemoryFrontmatter] = useState<Record<string, string>>({})
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [tourActive, setTourActive] = useState(false)
+  const [showFolderPrompt, setShowFolderPrompt] = useState(false)
   const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -273,11 +277,13 @@ export default function App() {
     window.api.setSetting('hasSeenOnboarding', true)
   }, [])
 
-  const handleOpenDemo = useCallback(async () => {
-    const demoPath = await window.api.getDemoPath()
+  const startTour = useCallback(async () => {
     closeOnboarding()
+    // Load the demo project so the tour has real files/tasks to interact with
+    const demoPath = await window.api.getDemoPath()
     await openFolder(demoPath)
-  }, [openFolder, closeOnboarding])
+    setTourActive(true)
+  }, [closeOnboarding, openFolder])
 
   const hasAnyFiles = !!(projectFiles && (
     projectFiles.claudeMd || projectFiles.commands.length > 0 ||
@@ -293,6 +299,7 @@ export default function App() {
       >
         <button
           onClick={handleOpenFolder}
+          data-tour="open-folder"
           className="toolbar-no-drag btn-glow px-4 py-1.5 text-sm flex-shrink-0"
         >
           Open Folder
@@ -340,6 +347,7 @@ export default function App() {
               label="Search"
               title="Search files (⌘F)"
               active={showSearch}
+              dataTour="search"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
@@ -350,6 +358,7 @@ export default function App() {
               label="Tasks"
               title="Tasks view"
               active={showTasks}
+              dataTour="tasks"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -377,6 +386,7 @@ export default function App() {
           <button
             onClick={() => setThemePreference(themePreference === 'dark' ? 'light' : 'dark')}
             title={`Switch to ${themePreference === 'dark' ? 'light' : 'dark'} mode`}
+            data-tour="theme"
             className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-100 transition-colors"
           >
             {themePreference === 'dark' ? (
@@ -395,6 +405,7 @@ export default function App() {
       {/* Body */}
       <div className="flex flex-1 min-h-0">
         <div
+          data-tour="sidebar"
           className="no-print flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 overflow-y-auto"
           style={{ width: sidebarWidth }}
         >
@@ -485,7 +496,7 @@ export default function App() {
 
       {updateInfo && (
         <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3 bg-blue-600 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg">
-          <span>ClaudeView {updateInfo.version} is available</span>
+          <span>MDView {updateInfo.version} is available</span>
           <button
             onClick={() => window.api.openExternal(updateInfo.url)}
             className="font-semibold underline hover:no-underline"
@@ -497,7 +508,24 @@ export default function App() {
       )}
 
       {showOnboarding && (
-        <Onboarding onClose={closeOnboarding} onOpenDemo={handleOpenDemo} />
+        <Onboarding onClose={closeOnboarding} onStartTour={startTour} />
+      )}
+
+      {tourActive && (
+        <Tour
+          onClose={() => setTourActive(false)}
+          onFinish={() => { setTourActive(false); setShowFolderPrompt(true) }}
+        />
+      )}
+
+      {showFolderPrompt && (
+        <FolderPrompt
+          onClose={() => setShowFolderPrompt(false)}
+          onChoose={async () => {
+            const folderPath = await window.api.openFolder()
+            if (folderPath) { await openFolder(folderPath); setShowFolderPrompt(false) }
+          }}
+        />
       )}
     </div>
   )
@@ -542,7 +570,7 @@ function Breadcrumb({ path, onNavigate }: { path: string; onNavigate: (p: string
 // ── Toolbar components ────────────────────────────────────────────────────────
 
 function LabelledButton({
-  onClick, label, title, children, active = false, disabled = false
+  onClick, label, title, children, active = false, disabled = false, dataTour
 }: {
   onClick: () => void
   label: string
@@ -550,12 +578,14 @@ function LabelledButton({
   children: React.ReactNode
   active?: boolean
   disabled?: boolean
+  dataTour?: string
 }) {
   return (
     <button
       onClick={onClick}
       title={title}
       disabled={disabled}
+      data-tour={dataTour}
       className={['btn-glow-tool', active ? 'is-active' : ''].join(' ')}
     >
       {children}

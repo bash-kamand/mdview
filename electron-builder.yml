@@ -1,5 +1,5 @@
-appId: com.kamand.claudeview
-productName: ClaudeView
+appId: com.kamand.mdview
+productName: MDView
 copyright: Copyright © 2026 Bashir Bandi
 directories:
   buildResources: build
@@ -18,10 +18,10 @@ mac:
         - universal
   category: public.app-category.developer-tools
 dmg:
-  artifactName: 'ClaudeView-${version}.dmg'
-  title: 'ClaudeView ${version}'
+  artifactName: 'MDView-${version}.dmg'
+  title: 'MDView ${version}'
 publish:
   provider: github
   owner: bash-kamand
-  repo: claudeview
+  repo: mdview
   releaseType: release

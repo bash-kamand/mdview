@@ -1,12 +1,12 @@
 # Project Tasks
 
-Click any checkbox to toggle it — ClaudeView saves the change directly to this file.
+Click any checkbox to toggle it — MDView saves the change directly to this file.
 
 ## Getting Started
 
-- [x] Install ClaudeView
+- [x] Install MDView
 - [x] Open the demo project
-- [x] Open your real Claude Code project with **Open Folder**
+- [x] Open your real project with **Open Folder**
 - [x] Try the Tasks view (toolbar checklist button)
 - [ ] Press `⌘F` to search across all files
 - [ ] Press `⌘P` to switch files fast

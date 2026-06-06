@@ -3,10 +3,10 @@ import { join, relative } from 'path'
 import { existsSync, readdirSync, readFileSync, writeFileSync, statSync, cpSync } from 'fs'
 import chokidar from 'chokidar'
 
-// Set the app name explicitly so userData / paths read "ClaudeView" in every
+// Set the app name explicitly so userData / paths read "MDView" in every
 // launch mode (dev defaults to "Electron" otherwise). Must run before any
 // app.getPath('userData') call.
-app.setName('ClaudeView')
+app.setName('MDView')
 
 let mainWindow: BrowserWindow | null = null
 let watcher: ReturnType<typeof chokidar.watch> | null = null
@@ -23,7 +23,7 @@ interface StoreData {
 }
 
 function storePath(): string {
-  return join(app.getPath('userData'), 'claudeview-store.json')
+  return join(app.getPath('userData'), 'mdview-store.json')
 }
 
 function readStore(): StoreData {
@@ -154,7 +154,7 @@ function createWindow(): void {
     minWidth: 800,
     minHeight: 600,
     titleBarStyle: 'hiddenInset',
-    title: 'ClaudeView',
+    title: 'MDView',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -343,8 +343,8 @@ function compareVersions(a: string, b: string): number {
 
 async function checkForUpdates() {
   try {
-    const res = await fetch('https://api.github.com/repos/bash-kamand/claudeview/releases/latest', {
-      headers: { 'User-Agent': 'ClaudeView' }
+    const res = await fetch('https://api.github.com/repos/bash-kamand/mdview/releases/latest', {
+      headers: { 'User-Agent': 'MDView' }
     })
     if (!res.ok) return
     const data = await res.json() as { tag_name: string; html_url: string }
