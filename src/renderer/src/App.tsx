@@ -92,7 +92,7 @@ export default function App() {
   const [fontSize, setFontSize] = useState(14)
   const [showSearch, setShowSearch] = useState(false)
   const [showTasks, setShowTasks] = useState(false)
-  const [showOutline, setShowOutline] = useState(false)
+  const [showOutline, setShowOutline] = useState(true)
   const [quickSwitcherOpen, setQuickSwitcherOpen] = useState(false)
   const [splitFile, setSplitFile] = useState<FileEntry | null>(null)
   const [splitContent, setSplitContent] = useState('')
@@ -175,16 +175,18 @@ export default function App() {
   // Init
   useEffect(() => {
     const init = async () => {
-      const [lastFolder, recent, storedWidth, storedFontSize, seenOnboarding] = await Promise.all([
+      const [lastFolder, recent, storedWidth, storedFontSize, seenOnboarding, storedOutline] = await Promise.all([
         window.api.getLastFolder(),
         window.api.getRecentFolders(),
         window.api.getSetting('sidebarWidth'),
         window.api.getSetting('fontSize'),
-        window.api.getSetting('hasSeenOnboarding')
+        window.api.getSetting('hasSeenOnboarding'),
+        window.api.getSetting('showOutline')
       ])
       setRecentFolders(recent)
       if (typeof storedWidth === 'number') setSidebarWidth(storedWidth)
       if (typeof storedFontSize === 'number') setFontSize(storedFontSize)
+      if (typeof storedOutline === 'boolean') setShowOutline(storedOutline)
       if (!seenOnboarding) setShowOnboarding(true)
       if (lastFolder) await openFolder(lastFolder)
     }
@@ -277,8 +279,6 @@ export default function App() {
     await openFolder(demoPath)
   }, [openFolder, closeOnboarding])
 
-  const truncatePath = (p: string) => p.length > 55 ? '…' + p.slice(-55) : p
-
   const hasAnyFiles = !!(projectFiles && (
     projectFiles.claudeMd || projectFiles.commands.length > 0 ||
     projectFiles.memory.length > 0 || projectFiles.other.length > 0
@@ -293,16 +293,18 @@ export default function App() {
       >
         <button
           onClick={handleOpenFolder}
-          className="toolbar-no-drag px-3 py-1 text-sm bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-md transition-colors flex-shrink-0"
+          className="toolbar-no-drag btn-glow px-4 py-1.5 text-sm flex-shrink-0"
         >
           Open Folder
         </button>
 
         {/* Path + recent */}
         <div className="toolbar-no-drag relative flex items-center gap-1 flex-1 min-w-0" ref={dropdownRef}>
-          <span className="text-sm text-gray-500 dark:text-gray-400 font-mono truncate">
-            {currentFolder ? truncatePath(currentFolder) : 'No folder open'}
-          </span>
+          {currentFolder ? (
+            <Breadcrumb path={currentFolder} onNavigate={openFolder} />
+          ) : (
+            <span className="text-sm text-gray-500 dark:text-gray-400 font-mono truncate">No folder open</span>
+          )}
           {recentFolders.length > 0 && (
             <button
               onClick={() => setShowRecent(v => !v)}
@@ -332,7 +334,7 @@ export default function App() {
         {/* Right toolbar — grouped */}
         <div className="toolbar-no-drag flex items-center gap-1 flex-shrink-0">
           {/* Group 1: Views */}
-          <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-700/60 rounded-lg p-0.5">
+          <div className="flex items-center gap-1.5">
             <LabelledButton
               onClick={() => setShowSearch(true)}
               label="Search"
@@ -421,11 +423,9 @@ export default function App() {
               />
             ) : showTasks ? (
               <TasksView
-                projectFiles={projectFiles}
-                onOpenFile={(file) => { loadFile(file); setShowTasks(false) }}
-                onFileUpdated={(file, newContent) => {
-                  if (selectedFile?.path === file.path) setFileContent(newContent)
-                }}
+                file={selectedFile}
+                content={fileContent}
+                onToggle={handleCheckboxToggle}
                 onClose={() => setShowTasks(false)}
               />
             ) : (
@@ -439,7 +439,7 @@ export default function App() {
                 fontSize={fontSize}
                 onFontSizeChange={(s) => { setFontSize(s); window.api.setSetting('fontSize', s) }}
                 showOutline={showOutline}
-                onToggleOutline={() => setShowOutline(v => !v)}
+                onToggleOutline={() => setShowOutline(v => { const next = !v; window.api.setSetting('showOutline', next); return next })}
                 fileStats={selectedFile ? (fileStats[selectedFile.path] ?? null) : null}
                 onCopyFile={() => window.api.writeToClipboard(fileContent)}
                 onPrintToPDF={() => selectedFile && window.api.printToPDF(selectedFile.name)}
@@ -503,6 +503,42 @@ export default function App() {
   )
 }
 
+// ── Breadcrumb ────────────────────────────────────────────────────────────────
+
+function Breadcrumb({ path, onNavigate }: { path: string; onNavigate: (p: string) => void }) {
+  const segments = path.split('/').filter(Boolean)
+  let acc = ''
+  const items = segments.map((name) => {
+    acc += '/' + name
+    return { name, full: acc }
+  })
+  // direction:rtl on the scroll container clips overflow on the left, keeping the
+  // current folder (tail) visible; inner direction:ltr keeps text reading normally.
+  return (
+    <div className="flex items-center min-w-0 overflow-hidden" style={{ direction: 'rtl' }}>
+      <div className="flex items-center whitespace-nowrap text-sm font-mono" style={{ direction: 'ltr' }}>
+        {items.map((item, i) => (
+          <span key={item.full} className="flex items-center">
+            {i > 0 && <span className="mx-1 text-gray-300 dark:text-gray-600 flex-shrink-0">/</span>}
+            <button
+              onClick={() => onNavigate(item.full)}
+              className={[
+                'transition-colors hover:underline',
+                i === items.length - 1
+                  ? 'text-gray-700 dark:text-gray-200 font-medium'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+              ].join(' ')}
+              title={`Open ${item.full}`}
+            >
+              {item.name}
+            </button>
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Toolbar components ────────────────────────────────────────────────────────
 
 function LabelledButton({
@@ -520,17 +556,10 @@ function LabelledButton({
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className={[
-        'flex flex-col items-center gap-0.5 px-2 py-1 rounded-md transition-colors min-w-[40px]',
-        disabled
-          ? 'opacity-30 cursor-not-allowed'
-          : active
-            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400'
-            : 'text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-100'
-      ].join(' ')}
+      className={['btn-glow-tool', active ? 'is-active' : ''].join(' ')}
     >
       {children}
-      <span className="text-[9px] font-medium leading-none opacity-70">{label}</span>
+      <span className="text-[9px] leading-none">{label}</span>
     </button>
   )
 }

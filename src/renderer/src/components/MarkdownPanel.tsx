@@ -135,6 +135,9 @@ export default function MarkdownPanel({
     [content, onOpenExternal, onCheckboxToggle]
   )
 
+  // Strip HTML comments (e.g. <!-- BEGIN:... -->) so they don't render as text
+  const cleanedContent = useMemo(() => content.replace(/<!--[\s\S]*?-->/g, ''), [content])
+
   if (!hasFolder) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center px-8 gap-4">
@@ -145,7 +148,7 @@ export default function MarkdownPanel({
           <h2 className="text-lg font-medium text-gray-500 dark:text-gray-400 mb-1">Open a Claude Code project folder</h2>
           <p className="text-sm text-gray-400 dark:text-gray-500">Browse CLAUDE.md, memory files, slash commands, and more.</p>
         </div>
-        <button onClick={onOpenFolder} className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm">Open Folder</button>
+        <button onClick={onOpenFolder} className="btn-glow px-5 py-2 text-sm">Open Folder</button>
       </div>
     )
   }
@@ -203,7 +206,7 @@ export default function MarkdownPanel({
                   rehypePlugins={[rehypeHighlight]}
                   components={components}
                 >
-                  {content}
+                  {cleanedContent}
                 </ReactMarkdown>
               </div>
             </div>

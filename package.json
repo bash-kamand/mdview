@@ -1,6 +1,7 @@
 {
   "name": "claudeview",
-  "version": "1.0.0",
+  "productName": "ClaudeView",
+  "version": "2.0.0",
   "description": "The missing UI for your Claude Code projects",
   "author": {
     "name": "Bashir Bandi",
@@ -18,7 +19,9 @@
     "preview": "electron-vite preview",
     "icon": "node scripts/build-icon.js",
     "package": "npm run build && electron-builder",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "chokidar": "^3.6.0",
@@ -42,6 +45,7 @@
     "postcss": "^8.4.49",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.8"
   }
 }

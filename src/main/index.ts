@@ -1,7 +1,12 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, clipboard } from 'electron'
 import { join, relative } from 'path'
-import { existsSync, readdirSync, readFileSync, writeFileSync, statSync } from 'fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync, statSync, cpSync } from 'fs'
 import chokidar from 'chokidar'
+
+// Set the app name explicitly so userData / paths read "ClaudeView" in every
+// launch mode (dev defaults to "Electron" otherwise). Must run before any
+// app.getPath('userData') call.
+app.setName('ClaudeView')
 
 let mainWindow: BrowserWindow | null = null
 let watcher: ReturnType<typeof chokidar.watch> | null = null
@@ -25,12 +30,16 @@ function readStore(): StoreData {
   try {
     if (existsSync(storePath())) {
       const parsed = JSON.parse(readFileSync(storePath(), 'utf-8'))
+      // Spread parsed last so every persisted key survives (hasSeenOnboarding,
+      // showOutline, and any future setting), with defaults filling the gaps.
       return {
-        recentFolders: parsed.recentFolders ?? [],
-        lastFolder: parsed.lastFolder ?? null,
-        sidebarWidth: parsed.sidebarWidth ?? 240,
-        themePreference: parsed.themePreference ?? 'system',
-        fontSize: parsed.fontSize ?? 14
+        recentFolders: [],
+        lastFolder: null,
+        sidebarWidth: 240,
+        themePreference: 'system',
+        fontSize: 14,
+        hasSeenOnboarding: false,
+        ...parsed
       }
     }
   } catch {
@@ -297,10 +306,23 @@ ipcMain.handle('fs:writeFile', (_event, filePath: string, content: string) => {
 })
 
 ipcMain.handle('app:getDemoPath', () => {
-  const base = app.isPackaged
-    ? process.resourcesPath
-    : join(app.getAppPath(), 'resources')
-  return join(base, 'demo')
+  // Bundled demo: packaged → Contents/Resources/demo (via extraResources);
+  // dev → <repo>/resources/demo (out/main is two levels under the repo root).
+  const source = app.isPackaged
+    ? join(process.resourcesPath, 'demo')
+    : join(__dirname, '..', '..', 'resources', 'demo')
+
+  // Copy into a writable location so the demo's interactive checkboxes/tasks can
+  // save to disk — the bundled copy is read-only inside the .app / on the DMG.
+  const dest = join(app.getPath('userData'), 'demo')
+  if (!existsSync(dest)) {
+    try {
+      cpSync(source, dest, { recursive: true })
+    } catch {
+      return source // fall back to the read-only bundled copy
+    }
+  }
+  return dest
 })
 
 ipcMain.handle('shell:openExternal', async (_event, url: string) => {

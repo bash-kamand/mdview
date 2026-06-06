@@ -74,7 +74,7 @@ export default function Onboarding({ onClose, onOpenDemo }: Props) {
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 text-sm font-medium bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+            className="btn-glow flex-1 py-2.5 text-sm"
           >
             Get Started
           </button>
