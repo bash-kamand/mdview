@@ -63,6 +63,20 @@ html, body, #root {
   html, body, #root { height: auto !important; overflow: visible !important; }
   .print-content { overflow: visible !important; height: auto !important; }
   .prose { max-width: 100% !important; font-size: 13px !important; }
+
+  /* Always export a light document, even when the app is in dark mode, so PDF
+     text stays dark-on-white and legible. */
+  html, body, #root, .print-content { background: #ffffff !important; }
+  .prose, .prose * { color: #1a1a1a !important; }
+  .prose a { color: #1d4ed8 !important; }
+  /* Flatten code blocks to dark-on-light (overrides injected github-dark hljs) */
+  .prose pre, .prose pre *,
+  .prose code:not(pre code),
+  .hljs, .hljs * {
+    background: #f4f4f5 !important;
+    color: #1a1a1a !important;
+  }
+  mark { background: #fde68a !important; color: #1a1a1a !important; }
 }
 
 /* Search result highlight */

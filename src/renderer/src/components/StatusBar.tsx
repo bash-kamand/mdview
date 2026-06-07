@@ -28,15 +28,37 @@ export default function StatusBar({ content, fileStats }: Props) {
 
   return (
     <div className="flex items-center gap-4 px-4 py-1.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex-shrink-0 overflow-x-auto">
-      <Stat label="words" value={words.toLocaleString()} />
-      <Stat label="chars" value={chars.toLocaleString()} />
-      <Stat label="~tokens" value={tokens.toLocaleString()} accent />
-      {fileStats && (
-        <>
-          <Stat label="size" value={formatBytes(fileStats.size)} />
-          <Stat label="modified" value={formatRelativeTime(fileStats.mtimeMs)} />
-        </>
-      )}
+      {/* Funnel: credit + links to LinkedIn / website (bottom-left) */}
+      <div className="flex items-center gap-2 text-xs whitespace-nowrap flex-shrink-0">
+        <span className="text-gray-400 dark:text-gray-500">Made by</span>
+        <button
+          onClick={() => window.api.openExternal('https://www.linkedin.com/in/bashirbandi/')}
+          className="text-gray-500 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 font-medium transition-colors"
+          title="Bashir Bandi on LinkedIn"
+        >
+          Bashir Bandi
+        </button>
+        <span className="text-gray-300 dark:text-gray-700">·</span>
+        <button
+          onClick={() => window.api.openExternal('https://kamand.co/mdview')}
+          className="text-gray-500 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 font-medium transition-colors"
+          title="More tools at kamand.co"
+        >
+          kamand.co
+        </button>
+      </div>
+
+      <span className="ml-auto flex items-center gap-4">
+        <Stat label="words" value={words.toLocaleString()} />
+        <Stat label="chars" value={chars.toLocaleString()} />
+        <Stat label="~tokens" value={tokens.toLocaleString()} accent />
+        {fileStats && (
+          <>
+            <Stat label="size" value={formatBytes(fileStats.size)} />
+            <Stat label="modified" value={formatRelativeTime(fileStats.mtimeMs)} />
+          </>
+        )}
+      </span>
     </div>
   )
 }

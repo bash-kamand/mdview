@@ -54,9 +54,16 @@ async function main() {
   const svgBuf = existsSync(EXTERNAL_SVG) ? readFileSync(EXTERNAL_SVG) : Buffer.from(SVG)
   console.log(existsSync(EXTERNAL_SVG) ? '  using icon.svg from repo root' : '  using inline SVG')
 
+  // Round the icon corners to 25% (mask the rasterised square so the corners
+  // become transparent). Done per-size so the radius scales cleanly.
   for (const { file, size } of SIZES) {
+    const r = Math.round(size * 0.25)
+    const mask = Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><rect width="${size}" height="${size}" rx="${r}" ry="${r}" fill="#fff"/></svg>`
+    )
     await sharp(svgBuf)
       .resize(size, size)
+      .composite([{ input: mask, blend: 'dest-in' }])
       .png()
       .toFile(join(ICONSET, file))
     console.log(`  ✓ ${file}`)
