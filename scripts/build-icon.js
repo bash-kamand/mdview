@@ -3,7 +3,7 @@
 
 const sharp = require('sharp')
 const { execSync } = require('child_process')
-const { mkdirSync, writeFileSync, rmSync, existsSync } = require('fs')
+const { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } = require('fs')
 const { join } = require('path')
 
 const ROOT = join(__dirname, '..')
@@ -49,7 +49,10 @@ async function main() {
   if (existsSync(ICONSET)) rmSync(ICONSET, { recursive: true })
   mkdirSync(ICONSET, { recursive: true })
 
-  const svgBuf = Buffer.from(SVG)
+  // Prefer an icon.svg in the repo root if present; otherwise use the inline SVG.
+  const EXTERNAL_SVG = join(ROOT, 'icon.svg')
+  const svgBuf = existsSync(EXTERNAL_SVG) ? readFileSync(EXTERNAL_SVG) : Buffer.from(SVG)
+  console.log(existsSync(EXTERNAL_SVG) ? '  using icon.svg from repo root' : '  using inline SVG')
 
   for (const { file, size } of SIZES) {
     await sharp(svgBuf)

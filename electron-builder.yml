@@ -19,6 +19,14 @@ mac:
       arch:
         - universal
   category: public.app-category.developer-tools
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  # Notarization is done as a separate step after the signed DMG is built,
+  # using the 'MDView' keychain profile (xcrun notarytool), so no secrets
+  # live in this repo or the build env.
+  notarize: false
 dmg:
   artifactName: 'MDView-${version}.dmg'
   title: 'MDView ${version}'
