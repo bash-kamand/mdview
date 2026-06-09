@@ -245,6 +245,9 @@ function FileItem({ file, isSelected, onSelect, onCmdClick, icon = '📄', bold 
           {frontmatterType}
         </span>
       )}
+      {file.hasTasks && (
+        <span className="flex-shrink-0 text-[10px] text-green-500 dark:text-green-400 font-mono" title="Has open tasks">✓</span>
+      )}
       {isRecent && (
         <span
           className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0"

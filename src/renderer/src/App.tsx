@@ -517,6 +517,12 @@ export default function App() {
         <Tour
           onClose={() => setTourActive(false)}
           onFinish={() => { setTourActive(false); setShowSkillsPrompt(true) }}
+          onStepChange={(step) => {
+            if (step === 3) {
+              const tasksFile = projectFiles?.other.find(f => f.name === 'tasks.md')
+              if (tasksFile) { loadFile(tasksFile); setShowTasks(true) }
+            }
+          }}
         />
       )}
 

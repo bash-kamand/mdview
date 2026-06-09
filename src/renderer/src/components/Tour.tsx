@@ -33,7 +33,7 @@ const STEPS: TourStep[] = [
   {
     selector: '[data-tour="tasks"]',
     title: 'Track tasks',
-    body: 'See and tick off the checkboxes in your current file, with live progress.',
+    body: 'Files with tasks show a ✓ badge in the sidebar — we\'ve switched to one. Tick a checkbox and MDView writes it straight back to the file.',
     placement: 'bottom',
     action: 'Click Tasks'
   },
@@ -50,15 +50,24 @@ interface Rect { top: number; left: number; width: number; height: number }
 
 const PAD = 6
 
-export default function Tour({ onClose, onFinish }: { onClose: () => void; onFinish: () => void }) {
+export default function Tour({ onClose, onFinish, onStepChange }: { onClose: () => void; onFinish: () => void; onStepChange?: (step: number) => void }) {
   const [step, setStep] = useState(0)
   const [rect, setRect] = useState<Rect | null>(null)
   const current = STEPS[step]
   const isLast = step === STEPS.length - 1
   const targetRef = useRef<Element | null>(null)
 
-  const next = () => (isLast ? onFinish() : setStep(s => s + 1))
-  const prev = () => setStep(s => Math.max(0, s - 1))
+  const next = () => {
+    if (isLast) { onFinish(); return }
+    const next = step + 1
+    setStep(next)
+    onStepChange?.(next)
+  }
+  const prev = () => {
+    const prev = Math.max(0, step - 1)
+    setStep(prev)
+    onStepChange?.(prev)
+  }
 
   // Glue the spotlight to the live element position (re-measure each frame so it
   // tracks layout changes, e.g. the sidebar populating after a folder opens).
@@ -122,14 +131,14 @@ export default function Tour({ onClose, onFinish }: { onClose: () => void; onFin
   })()
 
   return (
-    <div className="fixed inset-0 z-[60]">
+    <div className="fixed inset-0 z-[60] pointer-events-none">
       {/* Dimmed backdrop with a hole around the target (4 strips keep the target clickable) */}
       {rect ? (
         <>
-          <div className="absolute left-0 right-0 top-0 bg-black/60" style={{ height: Math.max(0, rect.top - PAD) }} />
-          <div className="absolute left-0 right-0 bottom-0 bg-black/60" style={{ top: rect.top + rect.height + PAD }} />
-          <div className="absolute bg-black/60" style={{ top: rect.top - PAD, left: 0, width: Math.max(0, rect.left - PAD), height: rect.height + PAD * 2 }} />
-          <div className="absolute bg-black/60" style={{ top: rect.top - PAD, left: rect.left + rect.width + PAD, right: 0, height: rect.height + PAD * 2 }} />
+          <div className="absolute left-0 right-0 top-0 bg-black/60 pointer-events-auto" style={{ height: Math.max(0, rect.top - PAD) }} />
+          <div className="absolute left-0 right-0 bottom-0 bg-black/60 pointer-events-auto" style={{ top: rect.top + rect.height + PAD }} />
+          <div className="absolute bg-black/60 pointer-events-auto" style={{ top: rect.top - PAD, left: 0, width: Math.max(0, rect.left - PAD), height: rect.height + PAD * 2 }} />
+          <div className="absolute bg-black/60 pointer-events-auto" style={{ top: rect.top - PAD, left: rect.left + rect.width + PAD, right: 0, height: rect.height + PAD * 2 }} />
           {/* Highlight ring */}
           <div
             className="absolute rounded-lg ring-2 ring-blue-400 pointer-events-none transition-all duration-200"
@@ -148,7 +157,7 @@ export default function Tour({ onClose, onFinish }: { onClose: () => void; onFin
 
       {/* Tooltip / callout */}
       <div
-        className="absolute w-72 max-w-[80vw] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4"
+        className="absolute w-72 max-w-[80vw] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 pointer-events-auto"
         style={tooltip}
       >
         <div className="flex items-center justify-between mb-1.5">

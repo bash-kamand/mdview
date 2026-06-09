@@ -58,6 +58,7 @@ interface FileEntry {
   name: string
   path: string
   relativePath: string
+  hasTasks?: boolean
 }
 
 interface ProjectFiles {
@@ -92,10 +93,16 @@ function walkMd(dir: string, rootDir: string, depth = 0): FileEntry[] {
     if (item.isDirectory()) {
       entries.push(...walkMd(fullPath, rootDir, depth + 1))
     } else if (item.isFile() && item.name.endsWith('.md')) {
+      let hasTasks = false
+      try {
+        const content = readFileSync(fullPath, 'utf8')
+        hasTasks = /- \[ \]/.test(content)
+      } catch { /* ignore unreadable files */ }
       entries.push({
         name: item.name,
         path: fullPath,
-        relativePath: relative(rootDir, fullPath)
+        relativePath: relative(rootDir, fullPath),
+        hasTasks
       })
     }
   }

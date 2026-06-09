@@ -4,6 +4,7 @@ interface FileEntry {
   name: string
   path: string
   relativePath: string
+  hasTasks?: boolean
 }
 
 interface ProjectFiles {
