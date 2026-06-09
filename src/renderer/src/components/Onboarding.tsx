@@ -22,7 +22,6 @@ export default function Onboarding({ onClose, onStartTour }: Props) {
             >
               Bashir Bandi
             </a>
-            {' · '}Pay what you can to support future updates
           </p>
         </div>
 
